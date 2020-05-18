@@ -59,6 +59,7 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+
 /* USER CODE END 0 */
 
 /**
@@ -77,15 +78,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-  // Declare External Interrupt
-  HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
 
-  // Set timer interrupt
-  //HAL_TIM_Base_Start_IT(&htim4);
-  //HAL_TIM_OC_Start_IT(&htim4, TIM_CHANNEL_1);
-
-  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -98,12 +91,16 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  MX_TIM2_Init();
   MX_USART2_UART_Init();
   MX_TIM4_Init();
-  MX_TIM6_Init();
+  MX_TIM3_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
+  //HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1); //Timer 4 start
+  HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_1);
 
+  //uint8_t txdata[] = "hello world!";
+  setup();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -111,9 +108,12 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	  htim4.Instance->CCR1 = 200;
-
+	//htim4.Instance->CCR1=200;
     /* USER CODE BEGIN 3 */
+
+	loop();
+
+
   }
   /* USER CODE END 3 */
 }

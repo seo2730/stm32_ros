@@ -27,7 +27,7 @@ ros::Publisher chatter("chatter", &str_msg);
 char hello[] = "Hello world!";
 
 std_msgs::UInt32 encoder_msg;
-ros::Publisher encoder_pub("encoder_pub", &encoder_msg);
+ros::Publisher encoder_pub("encoder", &encoder_msg);
 uint32_t encoder=0;
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart){
@@ -50,7 +50,7 @@ void loop(void)
 {
 	nowTick = HAL_GetTick();
 	encoder = TIM3->CNT;
-	if(nowTick - pastTick > 10)
+	if(nowTick - pastTick > 50)
 	{
 		if(led0 == 1)
 			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_0, GPIO_PIN_RESET);

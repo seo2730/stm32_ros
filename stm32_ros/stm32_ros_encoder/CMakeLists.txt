@@ -14,6 +14,8 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
 )
 
+add_message_files(FILES motor.msg)
+
 generate_messages(DEPENDENCIES std_msgs)
 
 catkin_package(

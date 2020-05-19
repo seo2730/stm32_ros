@@ -47,7 +47,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+uint32_t adcVal=0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -96,9 +96,9 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  //HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1); //Timer 4 start
+  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1); //Timer 4 start
   HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_1);
-
+  //HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adcVal, 1);
   //uint8_t txdata[] = "hello world!";
   setup();
   /* USER CODE END 2 */
@@ -108,7 +108,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	//htim4.Instance->CCR1=200;
+
     /* USER CODE BEGIN 3 */
 
 	loop();

@@ -20,6 +20,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "mainpp.h"
 #include "adc.h"
 #include "dma.h"
 #include "tim.h"
@@ -48,7 +49,19 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-int cnt=0;
+extern int32_t encoder;
+
+extern float T_deg, T_vel, T_cur;
+
+extern float cur_cur, past_cur, error_cur, error_cur_sum, lpf_cur ,value;
+extern float cur_vel, past_vel, error_vel, error_vel_sum;
+extern float cur_deg, past_deg, error_deg, past_error_deg;
+
+extern float position, velocity, current;
+
+int pos_Hz=0, vel_Hz=0, cur_Hz=0;
+
+extern float target_deg;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -75,7 +88,7 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+    HAL_Init();
 
   /* USER CODE BEGIN Init */
 
@@ -108,7 +121,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
+	  loop();
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -158,18 +171,50 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+///// TIMER INTERRUPT /////
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-	if(htim->Instance == htim2.Instance)
-	{
-		cnt++;
+	target_deg = 180 * DEG2RAD;
+	encoder = TIM3->CNT;
+	cur_deg = encoder * 2.0 * PI / (GEAR_RATIO*CPT*2.0);
+	cur_vel = (cur_deg - past_deg) * 2000;
+	current_sensor();
+	//current_sensor();
 
-		if(cnt==2000)
-		{
-			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_0 | GPIO_PIN_1);
-			cnt=0;
-		}
+	error_deg = target_deg - cur_deg;
+	if(error_deg>=0)
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET); // RESET: CCW, SET: CW
+
+	else if(error_deg<0)
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
+
+	if(pos_Hz == 1000)
+	{
+		postion_control(target_deg);
+		pos_Hz=0;
 	}
+
+	if(vel_Hz == 100)
+	{
+		speed_control(position, 36*DEG2RAD);
+		vel_Hz=0;
+	}
+
+	if(cur_Hz == 10)
+	{
+		current_control(velocity,1.5);
+		cur_Hz=0;
+	}
+
+
+	htim4.Instance->CCR1 = current;
+	past_deg = cur_deg;
+	past_error_deg = error_deg;
+
+	cur_Hz++;
+	vel_Hz++;
+	pos_Hz++;
+
 }
 /* USER CODE END 4 */
 

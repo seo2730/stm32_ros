@@ -19,7 +19,10 @@
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
+//#include "mainpp.h"
 #include "main.h"
+#include "mainpp.h"
+#include "adc.h"
 #include "dma.h"
 #include "tim.h"
 #include "usart.h"
@@ -47,7 +50,19 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint32_t adcVal=0;
+extern int32_t encoder;
+
+extern float T_deg, T_vel, T_cur;
+
+extern float cur_cur, past_cur, error_cur, error_cur_sum, lpf_cur ,value;
+extern float cur_vel, past_vel, error_vel, error_vel_sum;
+extern float cur_deg, past_deg, error_deg, past_error_deg;
+
+extern float position, velocity, current;
+
+int pos_Hz=0, vel_Hz=0, cur_Hz=0;
+
+extern float target_deg;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -58,7 +73,6 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
 
 /* USER CODE END 0 */
 
@@ -95,11 +109,11 @@ int main(void)
   MX_TIM4_Init();
   MX_TIM3_Init();
   MX_TIM2_Init();
+  MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
+  HAL_TIM_Base_Start_IT(&htim2);
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1); //Timer 4 start
   HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_1);
-  //HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adcVal, 1);
-  //uint8_t txdata[] = "hello world!";
   setup();
   /* USER CODE END 2 */
 
@@ -110,10 +124,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
-	loop();
-
-
   }
   /* USER CODE END 3 */
 }
@@ -162,7 +172,49 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+///// TIMER INTERRUPT /////
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+	target_deg = 180 * DEG2RAD;
+	encoder = TIM3->CNT;
+	cur_deg = encoder * 2.0 * PI / (GEAR_RATIO*CPT*2.0);
+	cur_vel = (cur_deg - past_deg) * 20;
+	current_sensor();
 
+	error_deg = target_deg - cur_deg;
+	if(error_deg>=0)
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET); // RESET: CCW, SET: CW
+
+	else if(error_deg<0)
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
+
+	if(pos_Hz == 1000)
+	{
+		postion_control(target_deg);
+		pos_Hz=0;
+	}
+
+	if(vel_Hz == 100)
+	{
+		speed_control(position, 45.0*DEG2RAD);
+		vel_Hz=0;
+	}
+
+	if(cur_Hz == 10)
+	{
+		current_control(velocity,1.0);
+		cur_Hz=0;
+	}
+
+	htim4.Instance->CCR1 = current;
+	past_deg = cur_deg;
+	past_error_deg = error_deg;
+
+	cur_Hz++;
+	vel_Hz++;
+	pos_Hz++;
+
+}
 /* USER CODE END 4 */
 
 /**
